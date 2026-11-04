@@ -72,7 +72,7 @@ label{font-weight:600;font-size:.88rem;display:block;margin-bottom:6px}
 
 /* phone preview */
 .stage{padding:40px 0 90px}
-.phone{margin:0 auto;width:300px;background:#fff;border:2px solid var(--line);border-radius:40px;padding:28px 20px 26px;position:relative;box-shadow:0 40px 70px -40px rgba(255,90,45,.55)}
+.phone{margin:0 auto;width:300px;background:#fff;border:2px solid var(--line);border-radius:40px;padding:28px 20px 68px;position:relative;box-shadow:0 40px 70px -40px rgba(255,90,45,.55)}
 .phone .av{width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,var(--brand),#FFB199);margin:0 auto 10px}
 .phone .nm{text-align:center;font-weight:800;font-size:1.1rem;letter-spacing:-.02em}
 .phone .sub{text-align:center;font-size:.82rem;color:var(--ink-2);margin-bottom:16px}
@@ -135,7 +135,7 @@ footer a:hover{color:var(--brand-text)}
   .pillrow{flex-direction:column;border-radius:28px;padding:8px}
   .pillrow input{padding:12px 16px}
   .more .grid{grid-template-columns:1fr}
-  .phone{width:260px}
+  .phone{width:260px;padding-bottom:84px}
   .toast{left:-20px;right:-20px}
   .perks li{border-radius:24px}
 }
@@ -278,10 +278,10 @@ footer a:hover{color:var(--brand-text)}
 
 <script>
 /* ---- WAITLIST SETUP ----
-   Set ENDPOINT to a URL that accepts a JSON POST: {email, handle, niche, source}.
-   Works with a Supabase edge function, Formspree, or a Google Apps Script web app.
-   While ENDPOINT is empty the page runs in demo mode and keeps signups in this browser only. */
-var ENDPOINT = "";
+   Paste your Supabase Project URL and publishable (anon) key below.
+   Signups are inserted into the public.waitlist table. */
+var SUPABASE_URL = "https://YOUR-PROJECT-REF.supabase.co";
+var SUPABASE_KEY = "YOUR-PUBLISHABLE-OR-ANON-KEY";
 
 (function(){
   var re = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -293,11 +293,13 @@ var ENDPOINT = "";
       msg.className = "msg";
       if(f.get("company")){ return; }              /* honeypot */
       if(!re.test(email)){ msg.className="msg err"; msg.textContent="Enter a valid email address, like you@example.com."; return; }
-      var payload = {email:email, handle:String(f.get("handle")||"").trim(), niche:String(f.get("niche")||""), source:location.href};
+      var payload = {email:email.toLowerCase(), handle:String(f.get("handle")||"").trim(), niche:String(f.get("niche")||""), source:location.href};
       btn.disabled = true; btn.textContent = "Joining…";
-      var send = ENDPOINT
-        ? fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}).then(function(r){ if(!r.ok) throw new Error("bad status"); })
-        : Promise.resolve().then(function(){ try{ var l=JSON.parse(localStorage.getItem("brandzy_wl")||"[]"); l.push(payload); localStorage.setItem("brandzy_wl",JSON.stringify(l)); }catch(e){} });
+      var send = fetch(SUPABASE_URL + "/rest/v1/waitlist?on_conflict=email", {
+        method: "POST",
+        headers: {"Content-Type":"application/json", "apikey":SUPABASE_KEY, "Prefer":"resolution=ignore-duplicates,return=minimal"},
+        body: JSON.stringify(payload)
+      }).then(function(r){ if(!r.ok) throw new Error("bad status"); });
       send.then(function(){
         form.style.display="none"; done.style.display="block";
       }).catch(function(){
